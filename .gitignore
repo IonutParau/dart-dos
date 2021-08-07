@@ -3,6 +3,7 @@
 .packages
 *\drive.json
 *\backup.json
+*\dartdos.exe
 
 # Conventional directory for build output.
 build/
