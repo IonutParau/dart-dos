@@ -19,3 +19,4 @@ export 'image.dart' show image;
 export 'settings.dart';
 export 'paint.dart';
 export 'download.dart';
+export 'apps.dart';

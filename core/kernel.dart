@@ -27,8 +27,10 @@ Map<String, dynamic> get blankDrive => {
       'settings': {
         'autosave': true,
         'diskcheck_on_boot': true,
+        'tabspacing': 2,
       },
       'filesync': {},
+      'onboot_scripts': <String>[],
       'name': 'DartDOS User',
       'password': '',
     };

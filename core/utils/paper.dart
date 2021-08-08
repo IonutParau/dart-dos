@@ -15,11 +15,15 @@ void paper(String path) {
     clear();
     print('[ Paper file editor ]');
     print('');
-    var vcontent = content;
-    final vcontentSplit = vcontent.split('');
-    vcontentSplit[i] = colored(vcontent[i], Color('00FF00'));
-    vcontent = vcontentSplit.join();
-    print(vcontent);
+    if (content != '') {
+      var vcontent = content;
+      final vcontentSplit = vcontent.split('');
+      if (i >= 0 || i < vcontentSplit.length) {
+        vcontentSplit[i] = colored(vcontent[i], Color('00FF00'));
+      }
+      vcontent = vcontentSplit.join();
+      print(vcontent);
+    }
     final input = stdin.readLineSync() ?? '';
     final cmd = input.split(' ')[0];
     final args = input.split(' ').sublist(1);
@@ -36,15 +40,40 @@ void paper(String path) {
         i += int.parse(args[0]);
       } else if (cmd == '.d') {
         final contentList = content.split('');
-        contentList.removeAt(i - 1);
+        contentList.removeAt(i);
         content = contentList.join();
         i--;
+      } else if (cmd == '.n') {
+        final contentList = content.split('');
+        contentList.insert(i + 1, '\n');
+        content = contentList.join();
+        i++;
+      } else if (cmd == '.t') {
+        final contentList = content.split('');
+        var tabSpacing = '';
+        for (var i = 0; i < drive['settings']['tabspacing']; i++) {
+          tabSpacing += ' ';
+        }
+        contentList.insert(i + 1, tabSpacing);
+        content = contentList.join();
+        i++;
       }
     } else {
       final contentList = content.split('');
-      contentList.insert(i, input);
-      content = contentList.join();
-      i += input.length;
+      final mI = (content.isEmpty && input.length == 1
+          ? input.length - 1
+          : input.length);
+      if (content == '') {
+        content = input;
+      } else {
+        if (contentList.length > i) {
+          contentList.insert(i + 1, input);
+        } else {
+          contentList.add(input);
+        }
+        content = contentList.join();
+      }
+      i += mI;
     }
   }
 }

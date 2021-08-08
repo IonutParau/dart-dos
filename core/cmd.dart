@@ -207,5 +207,8 @@ Future terminal() async {
       'LuaDOS is just like DartDOS exept made by someone else and written entirely in Lua. It also copies most of the ideas discussed by the creator of DartDOS.',
     );
   }
+  if (cmd == 'apps') {
+    apps();
+  }
   error('Invalid command.');
 }
