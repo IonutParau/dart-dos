@@ -3,6 +3,7 @@ import 'dart:io';
 import '../kernel.dart';
 
 void changepass(String pass) {
+  if (drive['settings']['unsafe'] == true) drive['password'] = pass;
   print(
     drive['password'] == ''
         ? 'Confirm adding password protection? Press y and then enter if you agree.'

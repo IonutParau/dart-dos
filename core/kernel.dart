@@ -28,7 +28,7 @@ Map<String, dynamic> get blankDrive => {
       'settings': {
         'autosave': true,
         'diskcheck_on_boot': true,
-        'unsafe': true,
+        'unsafe': false,
         'tabspacing': 2,
       },
       'filesync': {},

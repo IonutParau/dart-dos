@@ -3,6 +3,7 @@ import 'dart:io' as dio show exit;
 import 'dart:mirrors';
 import 'kernel.dart' hide readFile;
 import 'kernel.dart' as Kernel show readFile;
+import 'games/games.dart';
 import 'cmds/cmds.dart';
 import 'utils/utils.dart';
 
@@ -82,6 +83,7 @@ Future run(String path) async {
         vars[name] -= value;
       }
     } else if (cmd == 'onboot') {
+      if (drive['settings']['unsafe'] == true) await terminal(cmd, args);
       return print('Script attempted to perform forbitten activity.');
     } else {
       await terminal(cmd, args);
@@ -307,6 +309,9 @@ Future terminal(String cmd, List<String> args) async {
     } else {
       return error('Not enough arguments');
     }
+  }
+  if (cmd == 'tictactoe') {
+    tictactoe();
   }
   error('Invalid command.');
 }
