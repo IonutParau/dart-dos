@@ -60,9 +60,8 @@ void paper(String path) {
       }
     } else {
       final contentList = content.split('');
-      final mI = (content.isEmpty && input.length == 1
-          ? input.length - 1
-          : input.length);
+      final mI = (content.isEmpty ? input.length - 1 : input.length) +
+          (content.isEmpty && input.isEmpty ? 1 : 0);
       if (content == '') {
         content = input;
       } else {

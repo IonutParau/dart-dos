@@ -74,13 +74,31 @@ void healthCheck({bool silent = false}) {
           }
         });
       }
+    } else if (key == 'onboot_scripts') {
+      if (!(value is List)) {
+        drive[key] = <String>[];
+      }
+      final listOfRemovals = [];
+      drive[key].forEach(
+        (v) {
+          if (drive[v] == null) {
+            print('$v is a onboot script that does not exist.');
+            listOfRemovals.add(v);
+          }
+        },
+      );
+      listOfRemovals.forEach(
+        (element) {
+          drive[key].remove(element);
+        },
+      );
     } else {
       if (value is Map) {
         if (value['type'] != 'file' && value['type'] != 'folder') {
-          print('$key has a unsupported type.');
+          if (!silent) print('$key has a unsupported type.');
           problems++;
         } else if (key.split('/').last.split('.').length > 1) {
-          print('Assuming $key is a file...');
+          if (!silent) print('Assuming $key is a file...');
           if (value['type'] != 'file') {
             print("$key is a file but isn't listed as one!");
             problems++;
@@ -90,7 +108,7 @@ void healthCheck({bool silent = false}) {
             problems++;
           }
         } else if (key.split('/').last.split('.').length <= 1) {
-          print('Assuming $key is a folder...');
+          if (!silent) print('Assuming $key is a folder...');
           value.forEach(
             (k, v) {
               if (k != 'type') {
@@ -239,8 +257,9 @@ void heal() {
 
 void translator() {
   write('Output file name > ');
-  final outputDisk = stdin.readLineSync();
+  var outputDisk = stdin.readLineSync();
   if (outputDisk == null) return;
+  if (outputDisk.contains('.') == false) outputDisk += '.json';
   print('Translating disk...');
   var disk = <String, dynamic>{};
   disk['working'] = 'banana';

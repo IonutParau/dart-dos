@@ -1,6 +1,6 @@
 import 'dart:io';
 import '../utils/utils.dart' show disky, paper;
-import 'paint.dart';
+import '../utils/paint.dart';
 import '../cmd.dart' show path;
 
 void apps() {

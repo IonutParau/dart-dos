@@ -4,6 +4,7 @@ import 'dart:convert' show JsonEncoder, jsonDecode;
 import 'dart:io' show File, Platform, ProcessSignal, sleep, stdin, stdout;
 import 'package:ansicolor/ansicolor.dart' show AnsiPen;
 import 'package:dart_console/dart_console.dart' show Console;
+import 'cmd.dart' show run;
 import 'utils/disky.dart' show healthCheck, realTimeLDOSDriveTranslation;
 
 final _errorPen = AnsiPen()..red();
@@ -27,6 +28,7 @@ Map<String, dynamic> get blankDrive => {
       'settings': {
         'autosave': true,
         'diskcheck_on_boot': true,
+        'unsafe': true,
         'tabspacing': 2,
       },
       'filesync': {},
@@ -114,7 +116,13 @@ void loadDrive(String fileName) {
 
 late Map<String, dynamic> drive;
 
-void bootKernel() {
+Future onboot_scripts() async {
+  for (final str in drive['onboot_scripts']) {
+    await run(str);
+  }
+}
+
+Future bootKernel() async {
   if (!Platform.isWindows && !Platform.isLinux && !Platform.isMacOS) {
     return error(
       'You are using an unsupported parent operating system. Please use either Windows, Linux or MacOS to boot this DOS VM.',
@@ -138,7 +146,8 @@ void bootKernel() {
   if (drive['filesync'] is List) {
     drive['filesync'] = <String, dynamic>{};
   }
-  realTimeLDOSDriveTranslation();
+  realTimeLDOSDriveTranslation(); // To make L.U.A. useless
+  await onboot_scripts();
   if (drive['settings']['diskcheck_on_boot'] == true) healthCheck(silent: true);
   succes('Booted up Kernel');
   checkPassword();
@@ -218,6 +227,7 @@ void writeToFile(String path, Map<String, dynamic> newFile) {
 final unsupportedFileNames = <String>{
   '',
   '/',
+  '..',
 };
 
 void createFile(String path, Map<String, dynamic> file) {
@@ -267,6 +277,9 @@ String readFile(String path) {
 }
 
 void createFolder(String path) {
+  if (unsupportedFileNames.contains(path.split('/').last)) {
+    return error('Illegal Folder name');
+  }
   if (drive[path] == null) {
     drive[path] = {'type': 'folder'};
     saveDrive();

@@ -1,6 +1,8 @@
 import 'dart:io' show stdin;
 import 'dart:io' as dio show exit;
+import 'dart:mirrors';
 import 'kernel.dart' hide readFile;
+import 'kernel.dart' as Kernel show readFile;
 import 'cmds/cmds.dart';
 import 'utils/utils.dart';
 
@@ -13,7 +15,15 @@ void bootCommander() async {
   }
   try {
     while (true) {
-      await terminal();
+      write(
+        '${colored(path, Color('12AFE3'))} ${colored('>', Color('14E07A'))} ',
+      );
+      final input = stdin.readLineSync();
+      if (input == null) return error('^C');
+      final splitInput = input.split(' ');
+      final cmd = splitInput.first.toLowerCase();
+      final args = splitInput.sublist(1);
+      await terminal(cmd, args);
     }
   } catch (e) {
     showCrashScreen(
@@ -25,16 +35,62 @@ void bootCommander() async {
   }
 }
 
-Future terminal() async {
+Future run(String path) async {
+  final cmdsStr = Kernel.readFile(path);
+  final cmds = cmdsStr.split('\n');
+  final waypoints = <String, int>{};
+  final vars = <String, dynamic>{};
+
+  for (var i = 0; i < cmds.length; i++) {
+    final cmd = cmds[i].split(' ').first;
+    final args = cmds[i].split(' ').sublist(1);
+    vars.forEach((key, value) {
+      for (var i = 0; i < args.length; i++) {
+        args[i] = args[i].replaceAll('{$key}', value.toString());
+      }
+    });
+    if (cmd == 'here') {
+      waypoints[args[0]] = i;
+    } else if (cmd == 'goto') {
+      i = waypoints[args[0]] ?? 0;
+    } else if (cmd == 'var') {
+      final name = args[0];
+      final action = args[1];
+      if (action == 'set') {
+        dynamic value = args[2];
+        if (num.tryParse(args[2]) != null) value = num.tryParse(args[2]);
+        if (args[2] == 'true' || args[2] == 'false') {
+          value = (args[2] == 'true');
+        }
+        if (value == '%read%') value = stdin.readLineSync();
+        vars[name] = value;
+      }
+      if (action == 'add') {
+        dynamic value = args[2];
+        if (num.tryParse(args[2]) != null) value = num.tryParse(args[2]);
+        if (args[2] == 'true' || args[2] == 'false') {
+          value = (args[2] == 'true');
+        }
+        vars[name] += value;
+      }
+      if (action == 'sub') {
+        dynamic value = args[2];
+        if (num.tryParse(args[2]) != null) value = num.tryParse(args[2]);
+        if (args[2] == 'true' || args[2] == 'false') {
+          value = (args[2] == 'true');
+        }
+        vars[name] -= value;
+      }
+    } else if (cmd == 'onboot') {
+      return print('Script attempted to perform forbitten activity.');
+    } else {
+      await terminal(cmd, args);
+    }
+  }
+}
+
+Future terminal(String cmd, List<String> args) async {
   fileSyncInit();
-  write(
-    '${colored(path, Color('12AFE3'))} ${colored('>', Color('14E07A'))} ',
-  );
-  final input = stdin.readLineSync();
-  if (input == null) return error('^C');
-  final splitInput = input.split(' ');
-  final cmd = splitInput.first.toLowerCase();
-  final args = splitInput.sublist(1);
   if (cmd == 'hello') return hello();
   if (cmd == 'exit' ||
       cmd == 'shutdown' ||
@@ -77,6 +133,16 @@ Future terminal() async {
         dirPath = path == '/' ? '/$dirPath' : '$path/$dirPath';
       }
       return deldir(dirPath);
+    }
+    return error('Not enough arguments.');
+  }
+  if (cmd == 'run') {
+    if (args.isNotEmpty) {
+      var dirPath = args[0];
+      if (!dirPath.startsWith('/')) {
+        dirPath = path == '/' ? '/$dirPath' : '$path/$dirPath';
+      }
+      return run(dirPath);
     }
     return error('Not enough arguments.');
   }
@@ -197,7 +263,10 @@ Future terminal() async {
     }
     return error('Not enough arguments.');
   }
-  if (cmd == 'bananafix' || cmd == 'bananasync' || cmd == 'bananadrives') {
+  if (cmd == 'bananafix' ||
+      cmd == 'bananasync' ||
+      cmd == 'bananadrives' ||
+      cmd == 'bananafixy') {
     return print(
       'Do you think this is LuaDOS? No, this is not LuaDOS. We have Disky for that. Just use Disky.',
     );
@@ -208,7 +277,36 @@ Future terminal() async {
     );
   }
   if (cmd == 'apps') {
-    apps();
+    return apps();
+  }
+  if (cmd == 'drivey' || cmd == 'drivy') {
+    return print('What did you say? Its Disky, not $cmd');
+  }
+  if (cmd == 'onboot') {
+    if (args.isNotEmpty) {
+      if (args[0] == 'show') {
+        drive['onboot_scripts'].forEach(print);
+        return;
+      } else if (args[0] == 'add') {
+        var dirPath = args[1];
+        if (!dirPath.startsWith('/')) {
+          dirPath = path == '/' ? '/$dirPath' : '$path/$dirPath';
+        }
+        drive['onboot_scripts'].add(dirPath);
+        saveDrive();
+        return;
+      } else if (args[0] == 'remove') {
+        var dirPath = args[1];
+        if (!dirPath.startsWith('/')) {
+          dirPath = path == '/' ? '/$dirPath' : '$path/$dirPath';
+        }
+        drive['onboot_scripts'].remove(dirPath);
+        saveDrive();
+        return;
+      }
+    } else {
+      return error('Not enough arguments');
+    }
   }
   error('Invalid command.');
 }

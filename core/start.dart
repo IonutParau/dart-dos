@@ -3,12 +3,12 @@ import 'kernel.dart' show bootKernel, showCrashScreen;
 import 'cmd.dart' show bootCommander;
 import 'package:ansicolor/ansicolor.dart' show AnsiPen;
 
-void main() {
+void main() async {
   final bootPen = AnsiPen()..cyan();
   print('Initiating Boot routine');
   print(bootPen('> ') + 'Booting Kernel');
   try {
-    bootKernel();
+    await bootKernel();
   } catch (e) {
     if (e is FileSystemException) {
       showCrashScreen('Kernel FileSystem Interace Failure', 'DartDOS Kernel');

@@ -11,6 +11,7 @@ void cd(String dir) {
     path = paths.join('/') == '' ? '/' : paths.join('/');
   }
   if (dir.startsWith('/')) {
+    if (dir == '/') path = '/';
     if (drive[dir] != null) {
       if (drive[dir]['type'] == 'folder') {
         path = dir;
