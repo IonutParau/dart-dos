@@ -423,7 +423,7 @@ Future terminal(String cmd, List<String> args) async {
     }
     return error('Not enough arguments');
   }
-  if (cmd == 'filesync') {
+  if (cmd == 'http') {
     if (args.length > 1) {
       if (args.length == 2) return httpcmd(args[0], args[1]);
       if (args.length > 2) {
