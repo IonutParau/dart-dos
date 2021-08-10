@@ -41,6 +41,8 @@ Future run(String path) async {
   final cmds = cmdsStr.split('\n');
   final waypoints = <String, int>{};
   final vars = <String, dynamic>{};
+  final loops = <int, int>{};
+  var latestLoop = <int>{};
 
   for (var i = 0; i < cmds.length; i++) {
     final cmd = cmds[i].split(' ').first;
@@ -71,6 +73,56 @@ Future run(String path) async {
     } else if (cmd == 'goto') {
       i = waypoints[args[0]] ?? 0;
     } else if (cmd == 'if') {
+      final v1 = args[0];
+      final comparison = args[1];
+      final v2 = args[2];
+      var correct = false;
+      switch (comparison) {
+        case 'is':
+          correct = (vars[v1] == vars[v2]);
+          break;
+        case 'not':
+          correct = (vars[v1] != vars[v2]);
+          break;
+        case 'greater':
+          correct = (vars[v1] > vars[v2]);
+          break;
+        case 'less':
+          correct = (vars[v1] < vars[v2]);
+          break;
+        case 'has':
+          correct = (vars[v1].toString().contains(vars[v2].toString()));
+          break;
+        default:
+          error('Incorrect syntax');
+          break;
+      }
+      var depth = 1;
+      if (correct == false) {
+        while (depth > 0) {
+          i++;
+          if (cmds[i].split(' ')[0] == 'if') depth++;
+          if (cmds[i].split(' ')[0] == 'endif') depth--;
+        }
+      }
+    } else if (cmd == 'endif') {
+    } else if (cmd == 'loop') {
+      latestLoop.add(i);
+      loops[i] = int.parse(args.first);
+      if (loops[i] == 0) {
+        var depth = 1;
+        while (depth > 0) {
+          i++;
+          if (cmds[i] == '') continue;
+          if (cmds[i].split(' ')[0] == 'loop') depth++;
+          if (cmds[i].split(' ')[0] == 'endloop') depth--;
+        }
+      }
+    } else if (cmd == 'endloop') {
+      if ((loops[latestLoop.last] ?? 0) > 1) {
+        i = latestLoop.last;
+        loops[i] = (loops[i] ?? 0) - 1;
+      }
     } else if (cmd == 'var') {
       final name = args[0];
       final action = args[1];
@@ -120,6 +172,7 @@ Future terminal(String cmd, List<String> args) async {
       cmd == 'stop') return exit();
   if (cmd == 'help') return help();
   if (cmd == 'echo') return echo(args.join(' '));
+  if (cmd == 'write') return write(args.join(' '));
   if (cmd == 'cls' || cmd == 'clear') return clear();
   if (cmd == 'backup') {
     if (args.isNotEmpty) return backup(args[0]);
@@ -193,7 +246,11 @@ Future terminal(String cmd, List<String> args) async {
       if (!dirPath.startsWith('/')) {
         dirPath = path == '/' ? '/$dirPath' : '$path/$dirPath';
       }
-      return editfile(dirPath);
+      if (args.length == 1) {
+        return editfile(dirPath);
+      } else {
+        return editfile(dirPath, args[1]);
+      }
     }
     return error('Not enough arguments.');
   }

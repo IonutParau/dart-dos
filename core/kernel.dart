@@ -242,6 +242,7 @@ void createFile(String path, Map<String, dynamic> file) {
   if (path.split('/').last.split('.').length <= 1) {
     return error('Files must have file extensions');
   }
+
   if (drive[path] == null) {
     drive[path] = file;
     drive[path]['type'] = 'file';

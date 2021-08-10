@@ -67,9 +67,11 @@ void healthCheck({bool silent = false}) {
                   .toFilePath(windows: Platform.isWindows)
                   .split(Platform.isWindows ? r'\' : '/')
                   .last) {
-            print(
-              'FileSync links lead to system files, making them useless.',
-            );
+            if (!silent) {
+              print(
+                'FileSync links lead to system files, making them useless.',
+              );
+            }
             problems++;
           }
         });
@@ -82,7 +84,7 @@ void healthCheck({bool silent = false}) {
       drive[key].forEach(
         (v) {
           if (drive[v] == null) {
-            print('$v is a onboot script that does not exist.');
+            if (!silent) print('$v is a onboot script that does not exist.');
             listOfRemovals.add(v);
           }
         },
@@ -100,7 +102,7 @@ void healthCheck({bool silent = false}) {
         } else if (key.split('/').last.split('.').length > 1) {
           if (!silent) print('Assuming $key is a file...');
           if (value['type'] != 'file') {
-            print("$key is a file but isn't listed as one!");
+            if (!silent) print("$key is a file but isn't listed as one!");
             problems++;
           }
           if (value['content'] == null) {
