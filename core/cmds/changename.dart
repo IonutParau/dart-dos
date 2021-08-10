@@ -1,4 +1,4 @@
-import '../kernel.dart' show drive;
+import '../kernel.dart' show drive, saveDrive;
 
 void changeName(String newName) {
   if (newName.toLowerCase() == 'luados user' ||
@@ -6,4 +6,5 @@ void changeName(String newName) {
     newName = 'DartDOS User';
   }
   drive['name'] = newName;
+  saveDrive();
 }

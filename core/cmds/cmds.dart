@@ -19,3 +19,5 @@ export 'image.dart' show image;
 export 'settings.dart';
 export 'download.dart';
 export 'apps.dart';
+export 'filesync.dart';
+export 'http.dart';

@@ -52,13 +52,18 @@ Future run(String path) async {
       while (args[i].contains('%read%')) {
         args[i] = args[i].replaceFirst('%read%', stdin.readLineSync() ?? '');
       }
-      while (args[i].contains('%read%')) {
-        args[i] = args[i].replaceFirst('%read%', stdin.readLineSync() ?? '');
+      while (args[i].contains('%input%')) {
+        args[i] = args[i].replaceFirst('%input%', stdin.readLineSync() ?? '');
       }
       while (args[i].contains('%random%')) {
         args[i] =
             args[i].replaceFirst('%random%', Random().nextInt(10).toString());
       }
+      args[i] = args[i]
+          .replaceAll('%unsafe%', drive['settings']['unsafe'].toString());
+      args[i] = args[i].replaceAll('%scriptname%', path.split('/').last);
+      args[i] = args[i].replaceAll('%scriptpath%', path);
+      args[i] = args[i].replaceAll('%name%', drive['name']);
     }
     vars.forEach((key, value) {
       for (var i = 0; i < args.length; i++) {
@@ -79,19 +84,19 @@ Future run(String path) async {
       var correct = false;
       switch (comparison) {
         case 'is':
-          correct = (vars[v1] == vars[v2]);
+          correct = (v1 == v2);
           break;
         case 'not':
-          correct = (vars[v1] != vars[v2]);
+          correct = (v1 != v2);
           break;
         case 'greater':
-          correct = (vars[v1] > vars[v2]);
+          correct = (num.parse(v1) > num.parse(v2));
           break;
         case 'less':
-          correct = (vars[v1] < vars[v2]);
+          correct = (num.parse(v1) < num.parse(v2));
           break;
         case 'has':
-          correct = (vars[v1].toString().contains(vars[v2].toString()));
+          correct = (v1.contains(v2));
           break;
         default:
           error('Incorrect syntax');
@@ -122,6 +127,8 @@ Future run(String path) async {
       if ((loops[latestLoop.last] ?? 0) > 1) {
         i = latestLoop.last;
         loops[i] = (loops[i] ?? 0) - 1;
+      } else {
+        latestLoop.remove(latestLoop.last);
       }
     } else if (cmd == 'var') {
       final name = args[0];
@@ -140,7 +147,9 @@ Future run(String path) async {
         if (args[2] == 'true' || args[2] == 'false') {
           value = (args[2] == 'true');
         }
-        vars[name] += value;
+        if (value is num) vars[name] += value;
+        if (value is String) vars[name] += value;
+        if (value is bool) vars[name] += value;
       }
       if (action == 'sub') {
         dynamic value = args[2];
@@ -148,14 +157,36 @@ Future run(String path) async {
         if (args[2] == 'true' || args[2] == 'false') {
           value = (args[2] == 'true');
         }
-        vars[name] -= value;
+        if (value is num) vars[name] -= value;
+        if (value is String) vars[name] -= value;
+        if (value is bool) vars[name] -= value;
       }
+      if (action == 'readfile') {
+        var dirPath = args[2];
+        if (!dirPath.startsWith('/')) {
+          dirPath = path == '/' ? '/$dirPath' : '$path/$dirPath';
+        }
+        final file = drive[dirPath];
+        if (file['type'] != 'file') return error('$dirPath is not file');
+        if (file['content'] == null) {
+          return error('File does not have any content what-so-ever');
+        }
+        vars[name] = file['content'];
+      }
+    } else if (cmd == 'stop') {
+      return;
     } else if (cmd == 'onboot') {
-      if (drive['settings']['unsafe'] == true) return await terminal(cmd, args);
-      return print('Script attempted to perform forbitten activity.');
+      if (drive['settings']['unsafe'] == true) {
+        await terminal(cmd, args);
+      } else {
+        return print('Script attempted to perform forbitten activity.');
+      }
     } else if (cmd == 'backup' || cmd == 'restore') {
-      if (drive['settings']['unsafe'] == true) return await terminal(cmd, args);
-      return print('Script attempted to perform forbitten activity.');
+      if (drive['settings']['unsafe'] == true) {
+        await terminal(cmd, args);
+      } else {
+        return print('Script attempted to perform forbitten activity.');
+      }
     } else {
       await terminal(cmd, args);
     }
@@ -249,7 +280,7 @@ Future terminal(String cmd, List<String> args) async {
       if (args.length == 1) {
         return editfile(dirPath);
       } else {
-        return editfile(dirPath, args[1]);
+        return editfile(dirPath, args.sublist(1).join(' '));
       }
     }
     return error('Not enough arguments.');
@@ -385,6 +416,21 @@ Future terminal(String cmd, List<String> args) async {
     } else {
       return error('Not enough arguments');
     }
+  }
+  if (cmd == 'filesync') {
+    if (args.isNotEmpty) {
+      return filesync(args[0], args.sublist(1));
+    }
+    return error('Not enough arguments');
+  }
+  if (cmd == 'filesync') {
+    if (args.length > 1) {
+      if (args.length == 2) return httpcmd(args[0], args[1]);
+      if (args.length > 2) {
+        return httpcmd(args[0], args[1], args.sublist(2).join(' '));
+      }
+    }
+    return error('Not enough arguments');
   }
   if (cmd == 'tictactoe') {
     tictactoe();

@@ -8,7 +8,7 @@ void dir(String path) {
       if (key.split('/').length == wantedLength &&
           key.startsWith(path) &&
           key != path) {
-        print(key.replaceFirst('$path/', ''));
+        print(key.replaceFirst('$path/', '') + ' -- ${drive[key]['type']}');
       }
     },
   );
