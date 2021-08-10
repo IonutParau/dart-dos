@@ -387,8 +387,12 @@ void realTimeLDOSDriveTranslation() {
     drive['files'].forEach((k, v) {
       var fPath = k;
       if (fPath.endsWith('/')) fPath = (fPath.split('')..removeLast()).join();
+      if (fPath.split('')[1] == ':') {
+        fPath = (fPath.split('').sublist(2)).join();
+      }
       drive[fPath] = v;
     });
     drive.remove('files');
   }
+  saveDrive();
 }

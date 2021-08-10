@@ -1,8 +1,8 @@
 import 'dart:io' show stdin;
 import 'dart:io' as dio show exit;
-import 'dart:mirrors';
+import 'dart:math';
 import 'kernel.dart' hide readFile;
-import 'kernel.dart' as Kernel show readFile;
+import 'kernel.dart' as kernel show readFile;
 import 'games/games.dart';
 import 'cmds/cmds.dart';
 import 'utils/utils.dart';
@@ -37,7 +37,7 @@ void bootCommander() async {
 }
 
 Future run(String path) async {
-  final cmdsStr = Kernel.readFile(path);
+  final cmdsStr = kernel.readFile(path);
   final cmds = cmdsStr.split('\n');
   final waypoints = <String, int>{};
   final vars = <String, dynamic>{};
@@ -45,8 +45,24 @@ Future run(String path) async {
   for (var i = 0; i < cmds.length; i++) {
     final cmd = cmds[i].split(' ').first;
     final args = cmds[i].split(' ').sublist(1);
+
+    for (var i = 0; i < args.length; i++) {
+      while (args[i].contains('%read%')) {
+        args[i] = args[i].replaceFirst('%read%', stdin.readLineSync() ?? '');
+      }
+      while (args[i].contains('%read%')) {
+        args[i] = args[i].replaceFirst('%read%', stdin.readLineSync() ?? '');
+      }
+      while (args[i].contains('%random%')) {
+        args[i] =
+            args[i].replaceFirst('%random%', Random().nextInt(10).toString());
+      }
+    }
     vars.forEach((key, value) {
       for (var i = 0; i < args.length; i++) {
+        args[i] = args[i].replaceAll('%nil%', '');
+        args[i] = args[i].replaceAll('%null%', '');
+        args[i] = args[i].replaceAll('%space%', ' ');
         args[i] = args[i].replaceAll('{$key}', value.toString());
       }
     });
@@ -54,6 +70,7 @@ Future run(String path) async {
       waypoints[args[0]] = i;
     } else if (cmd == 'goto') {
       i = waypoints[args[0]] ?? 0;
+    } else if (cmd == 'if') {
     } else if (cmd == 'var') {
       final name = args[0];
       final action = args[1];
@@ -63,7 +80,6 @@ Future run(String path) async {
         if (args[2] == 'true' || args[2] == 'false') {
           value = (args[2] == 'true');
         }
-        if (value == '%read%') value = stdin.readLineSync();
         vars[name] = value;
       }
       if (action == 'add') {
@@ -83,7 +99,10 @@ Future run(String path) async {
         vars[name] -= value;
       }
     } else if (cmd == 'onboot') {
-      if (drive['settings']['unsafe'] == true) await terminal(cmd, args);
+      if (drive['settings']['unsafe'] == true) return await terminal(cmd, args);
+      return print('Script attempted to perform forbitten activity.');
+    } else if (cmd == 'backup' || cmd == 'restore') {
+      if (drive['settings']['unsafe'] == true) return await terminal(cmd, args);
       return print('Script attempted to perform forbitten activity.');
     } else {
       await terminal(cmd, args);

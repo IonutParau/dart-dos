@@ -4,10 +4,11 @@ import '../kernel.dart' show drive, saveDrive, error;
 
 void restore(String fileName) {
   if (fileName ==
-      Platform.script
-          .toFilePath(windows: Platform.isWindows)
-          .split(Platform.isWindows ? r'\' : '/')
-          .last) {
+          Platform.script
+              .toFilePath(windows: Platform.isWindows)
+              .split(Platform.isWindows ? r'\' : '/')
+              .last &&
+      drive['settings']['unsafe'] == true) {
     return error("Can't restore from critical system files.");
   }
 
@@ -28,4 +29,5 @@ void restore(String fileName) {
   } else {
     error('Backup not found!');
   }
+  saveDrive();
 }

@@ -16,4 +16,5 @@ void delfile(String path) {
   } else {
     deleteFile(path);
   }
+  saveDrive();
 }

@@ -5,4 +5,5 @@ void mkfile(String path) {
     path,
     {'type': 'file', 'content': ''},
   );
+  saveDrive();
 }

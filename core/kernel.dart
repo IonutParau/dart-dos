@@ -4,21 +4,24 @@ import 'dart:convert' show JsonEncoder, jsonDecode;
 import 'dart:io' show File, Platform, ProcessSignal, sleep, stdin, stdout;
 import 'package:ansicolor/ansicolor.dart' show AnsiPen;
 import 'package:dart_console/dart_console.dart' show Console;
+import 'package:dart_console/dart_console.dart';
 import 'cmd.dart' show run;
 import 'utils/disky.dart' show healthCheck, realTimeLDOSDriveTranslation;
 
 final _errorPen = AnsiPen()..red();
 final _succesPen = AnsiPen()..green();
 
-final buildString = 'DartDOS v1.0 Beta Build 6';
+final buildString = 'DartDOS v1.0 Beta Build 7';
 
 String get encodedDrive => JsonEncoder.withIndent('  ').convert(drive);
 
 void showCrashScreen(String errorMessage, String errorSource) {
+  clear();
   print('[ Crash Screen Beta ]');
   error('A critical error has occured!');
   print(
-      'Your system has detected a critical error somewhere. Depending on the source of the problem, the system might be attempting to fix it.');
+    'Your system has detected a critical error somewhere. Depending on the source of the problem, the system might be attempting to fix it.',
+  );
   print('Error Message - $errorMessage | Error Source - $errorSource');
   write('Press enter to continue');
   stdin.readLineSync();
@@ -194,9 +197,11 @@ void fileSyncInit() {
       if (k.contains('/') == false) return;
       if (k.split('/').last.split('.').length <= 1) return;
       if (v.endsWith(Platform.script
-          .toFilePath(windows: Platform.isWindows)
-          .split(Platform.isWindows ? r'\' : '/')
-          .last)) {
+              .toFilePath(windows: Platform.isWindows)
+              .split(Platform.isWindows ? r'\' : '/')
+              .last) ||
+          v.endsWith('drive.json') ||
+          v.endsWith('backup.json')) {
         return error(
           'FileSync attempted to sync with a critical system file and was blocked.',
         );

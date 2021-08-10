@@ -17,4 +17,5 @@ void deldir(String path) {
   } else {
     deleteFolder(path);
   }
+  saveDrive();
 }
