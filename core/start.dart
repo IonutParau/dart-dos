@@ -17,6 +17,7 @@ void main() async {
     }
     showCrashScreen('Kernel Booting Routine Failed', 'DartDOS Kernel');
     print('Known stack trace');
+    print(e.runtimeType);
     print(e.toString());
     exit(0);
   }

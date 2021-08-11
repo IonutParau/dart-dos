@@ -39,8 +39,19 @@ void bootCommander() async {
 
 Future run(String path) async {
   final cmdsStr = kernel.readFile(path);
-  final cmds = cmdsStr.split('\n');
-  final waypoints = <String, int>{};
+  final cmdsStrSplit = cmdsStr.split('\n');
+  final cmds = <String>[];
+  for (var str in cmdsStrSplit) {
+    cmds.addAll(str.split(';'));
+  }
+  for (var i = 0; i < cmds.length; i++) {
+    if (cmds[i].startsWith(' ')) {
+      cmds[i] = (cmds[i].split('')..removeAt(0)).join();
+    }
+    if (cmds[i].startsWith('\t')) {
+      cmds[i].replaceFirst('\t', '');
+    }
+  }
   final vars = <String, dynamic>{};
   final loops = <int, int>{};
   var latestLoop = <int>{};
@@ -60,24 +71,42 @@ Future run(String path) async {
         args[i] =
             args[i].replaceFirst('%random%', Random().nextInt(10).toString());
       }
+      while (args[i].contains('%path%')) {
+        args[i] = args[i].replaceFirst('%path%', path);
+      }
+      while (args[i].contains('%space%')) {
+        args[i] = args[i].replaceFirst('%space%', ' ');
+      }
+      while (args[i].contains('%version%')) {
+        args[i] = args[i].replaceFirst('%version%', buildString);
+      }
+      while (args[i].contains('%semicolon%') ||
+          args[i].contains('%sc%') ||
+          args[i].contains('%smcl%')) {
+        args[i] = args[i].replaceFirst('%semicolon%', ';');
+        args[i] = args[i].replaceFirst('%sc%', ';');
+        args[i] = args[i].replaceFirst('%smcln%', ';');
+      }
       args[i] = args[i]
           .replaceAll('%unsafe%', drive['settings']['unsafe'].toString());
       args[i] = args[i].replaceAll('%scriptname%', path.split('/').last);
       args[i] = args[i].replaceAll('%scriptpath%', path);
       args[i] = args[i].replaceAll('%name%', drive['name']);
+      // args[i] = args[i].replaceAll('%nil%', '');
+      // args[i] = args[i].replaceAll('%null%', '');
     }
-    vars.forEach((key, value) {
-      for (var i = 0; i < args.length; i++) {
-        args[i] = args[i].replaceAll('%nil%', '');
-        args[i] = args[i].replaceAll('%null%', '');
-        args[i] = args[i].replaceAll('%space%', ' ');
-        args[i] = args[i].replaceAll('{$key}', value.toString());
-      }
-    });
+    vars.forEach(
+      (key, value) {
+        for (var i = 0; i < args.length; i++) {
+          while (args[i].contains('{$key}')) {
+            args[i] = args[i].replaceFirst('{$key}', value.toString());
+          }
+        }
+      },
+    );
     if (cmd == 'here') {
-      waypoints[args[0]] = i;
     } else if (cmd == 'goto') {
-      i = waypoints[args[0]] ?? 0;
+      i = cmds.indexOf('here ${args[0]}');
     } else if (cmd == 'if') {
       final v1 = args[0];
       final comparison = args[1];
@@ -98,6 +127,9 @@ Future run(String path) async {
           break;
         case 'has':
           correct = (v1.contains(v2));
+          break;
+        case 'hasnt':
+          correct = (v1.contains(v2) == false);
           break;
         default:
           error('Incorrect syntax');
@@ -134,7 +166,7 @@ Future run(String path) async {
     } else if (cmd == 'var') {
       final name = args[0];
       final action = args[1];
-      if (action == 'set') {
+      if (action == 'set' || action == 'is' || action == '=') {
         dynamic value = args[2];
         if (num.tryParse(args[2]) != null) value = num.tryParse(args[2]);
         if (args[2] == 'true' || args[2] == 'false') {
@@ -142,7 +174,7 @@ Future run(String path) async {
         }
         vars[name] = value;
       }
-      if (action == 'add') {
+      if (action == 'add' || action == '+') {
         dynamic value = args[2];
         if (num.tryParse(args[2]) != null) value = num.tryParse(args[2]);
         if (args[2] == 'true' || args[2] == 'false') {
@@ -152,7 +184,7 @@ Future run(String path) async {
         if (value is String) vars[name] += value;
         if (value is bool) vars[name] += value;
       }
-      if (action == 'sub') {
+      if (action == 'sub' || action == '-') {
         dynamic value = args[2];
         if (num.tryParse(args[2]) != null) value = num.tryParse(args[2]);
         if (args[2] == 'true' || args[2] == 'false') {
@@ -162,7 +194,7 @@ Future run(String path) async {
         if (value is String) vars[name] -= value;
         if (value is bool) vars[name] -= value;
       }
-      if (action == 'readfile') {
+      if (action == 'readfile' || action == 'readf') {
         var dirPath = args[2];
         if (!dirPath.startsWith('/')) {
           dirPath = path == '/' ? '/$dirPath' : '$path/$dirPath';
@@ -189,6 +221,18 @@ Future run(String path) async {
     } else if (cmd == 'onboot') {
       if (drive['settings']['unsafe'] == true) {
         await terminal(cmd, args);
+      } else {
+        return print('Script attempted to perform forbitten activity.');
+      }
+    } else if (cmd == 'deluser') {
+      if (drive['settings']['unsafe'] == true) {
+        await terminal(cmd, args);
+      } else {
+        return print('Script attempted to perform forbitten activity.');
+      }
+    } else if (cmd == 'logout') {
+      if (drive['settings']['unsafe'] == true) {
+        return await terminal(cmd, args);
       } else {
         return print('Script attempted to perform forbitten activity.');
       }
@@ -445,6 +489,22 @@ Future terminal(String cmd, List<String> args) async {
   }
   if (cmd == 'tictactoe') {
     tictactoe();
+  }
+  if (cmd == 'logout') {
+    clear();
+    checkPassword(true);
+    fileSyncInit();
+    await onboot_scripts();
+    return saveDrive();
+  }
+  if (cmd == 'deluser') {
+    print(
+        'Are you sure you want to delete the user you are currently in? [y/n]');
+    final answer = stdin.readLineSync();
+    if (answer == 'y') {
+      return removeCurrentUser();
+    }
+    return;
   }
   error('Invalid command.');
 }

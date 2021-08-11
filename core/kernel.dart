@@ -1,7 +1,7 @@
 //import 'package:path/path.dart';
 
 import 'dart:convert' show JsonEncoder, jsonDecode;
-import 'dart:io' show File, Platform, ProcessSignal, sleep, stdin, stdout;
+import 'dart:io' show File, Platform, ProcessSignal, exit, sleep, stdin, stdout;
 import 'package:ansicolor/ansicolor.dart' show AnsiPen;
 import 'package:dart_console/dart_console.dart' show Console;
 import 'package:dart_console/dart_console.dart';
@@ -13,7 +13,7 @@ final _succesPen = AnsiPen()..green();
 
 final buildString = 'DartDOS v1.0 Beta Build 7';
 
-String get encodedDrive => JsonEncoder.withIndent('  ').convert(drive);
+String get encodedDrive => JsonEncoder.withIndent('  ').convert(_users);
 
 void showCrashScreen(String errorMessage, String errorSource) {
   clear();
@@ -49,8 +49,13 @@ void fixDrive() {
   );
 }
 
+List _users = [];
+
+var _userID = 0;
+
 void saveDrive() {
   var file = File('drive.json');
+  _users[_userID] = drive;
   file.writeAsStringSync(encodedDrive);
 }
 
@@ -92,9 +97,12 @@ void loadDrive(String fileName) {
   final driveFile = File(fileName);
   try {
     final data = driveFile.readAsStringSync();
-    drive = jsonDecode(data);
-    fixDrive();
-    saveDrive();
+    final tmpdrive = jsonDecode(data);
+    if (tmpdrive is Map) {
+      _users = [tmpdrive];
+    } else {
+      _users = tmpdrive;
+    }
   } catch (e) {
     if (fileName == 'drive.json') return loadDrive('backup.json');
 
@@ -108,20 +116,23 @@ void loadDrive(String fileName) {
     var input = stdin.readLineSync() ?? '';
     if (input.split('.').length == 1) input += '.json';
     if (input == '.json') {
-      drive = blankDrive;
-      saveDrive();
+      _users = [];
     } else {
       loadDrive(input);
     }
-    saveDrive();
   }
 }
 
 late Map<String, dynamic> drive;
 
 Future onboot_scripts() async {
-  for (final str in drive['onboot_scripts']) {
-    await run(str);
+  final ran = [];
+  for (var i = 0; i < drive['onboot_scripts'].length; i++) {
+    final str = drive['onboot_scripts'][i];
+    if (ran.contains(str) == false) {
+      ran.add(str);
+      await run(str);
+    }
   }
 }
 
@@ -143,23 +154,56 @@ Future bootKernel() async {
     print("Couldn't find virtual drive.");
     print('Creating virtual drive...');
     driveFile.createSync();
-    drive = blankDrive;
-    saveDrive();
+    _users = [];
   }
+  checkPassword();
+  realTimeLDOSDriveTranslation(); // To make L.U.A. useless
+  await onboot_scripts();
   if (drive['filesync'] is List) {
     drive['filesync'] = <String, dynamic>{};
   }
-  realTimeLDOSDriveTranslation(); // To make L.U.A. useless
-  await onboot_scripts();
-  if (drive['settings']['diskcheck_on_boot'] == true) healthCheck(silent: true);
+  saveDrive();
   succes('Booted up Kernel');
-  checkPassword();
+  if (drive['settings']['diskcheck_on_boot'] == true) healthCheck(silent: true);
   ProcessSignal.sigint.watch().listen((event) {});
 }
 
-bool guestMode = false;
+//bool guestMode = false;
 
-void checkPassword() {
+void removeCurrentUser() {
+  _users.removeAt(_userID);
+  checkPassword(true);
+}
+
+void checkPassword([bool isLoggingOut = false]) {
+  if (_users.length > 1 || isLoggingOut) {
+    print(
+      'Welcome to the log in prompt! Please select a user by number from: ',
+    );
+    for (var i = 0; i < _users.length; i++) {
+      print('${_users[i]['name']} [$i]');
+    }
+    final input = stdin.readLineSync();
+    if (input == null) exit(0);
+    if (input == 'add') {
+      write('Username: ');
+      final name = stdin.readLineSync() ?? '';
+      write('Password: ');
+      final pass = stdin.readLineSync() ?? '';
+      final user = blankDrive;
+      user['name'] = name;
+      user['password'] = pass;
+      _users.add(user);
+      _userID = _users.length - 1;
+    } else {
+      _userID = int.tryParse(input) ?? 0;
+    }
+  } else if (_users.isEmpty) {
+    _users.add(blankDrive);
+  }
+  drive = _users[_userID];
+  fixDrive();
+
   if (drive['password'] == '') {
     return;
   } else {
@@ -216,6 +260,8 @@ void fileSyncInit() {
 }
 
 void writeToFile(String path, Map<String, dynamic> newFile) {
+  path = path.replaceAll('\n', '');
+  path = path.replaceAll('\r', '');
   if (drive[path] == null) {
     return error('An error has occured while writing to the file.');
   }
@@ -233,9 +279,12 @@ final unsupportedFileNames = <String>{
   '',
   '/',
   '..',
+  ' ',
 };
 
 void createFile(String path, Map<String, dynamic> file) {
+  path = path.replaceAll('\n', '');
+  path = path.replaceAll('\r', '');
   if (unsupportedFileNames.contains(path.split('/').last)) {
     return error('Unsupported file name');
   }
@@ -252,6 +301,8 @@ void createFile(String path, Map<String, dynamic> file) {
 }
 
 void deleteFile(String path) {
+  path = path.replaceAll('\n', '');
+  path = path.replaceAll('\r', '');
   if (path.split('/').last.split('.').length <= 1) {
     return error('File path is invalid. File names need file extensions');
   }
@@ -265,6 +316,8 @@ void deleteFile(String path) {
 }
 
 String readFile(String path) {
+  path = path.replaceAll('\n', '');
+  path = path.replaceAll('\r', '');
   if (path.split('/').last.split('.').length <= 1) {
     error(
       'File path is invalid. File names need file extensions',
@@ -283,6 +336,8 @@ String readFile(String path) {
 }
 
 void createFolder(String path) {
+  path = path.replaceAll('\n', '');
+  path = path.replaceAll('\r', '');
   if (unsupportedFileNames.contains(path.split('/').last)) {
     return error('Illegal Folder name');
   }
@@ -295,6 +350,8 @@ void createFolder(String path) {
 }
 
 void deleteFolder(String path) {
+  path = path.replaceAll('\n', '');
+  path = path.replaceAll('\r', '');
   if (drive[path] == null) return error('Folder does not exist');
   if (drive[path]['type'] != 'folder') return error('$path is not a folder.');
   drive.remove(path);
