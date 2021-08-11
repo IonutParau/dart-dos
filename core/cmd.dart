@@ -6,6 +6,7 @@ import 'kernel.dart' as kernel show readFile;
 import 'games/games.dart';
 import 'cmds/cmds.dart';
 import 'utils/utils.dart';
+import 'package:math_expressions/math_expressions.dart';
 
 var path = '/';
 
@@ -172,6 +173,16 @@ Future run(String path) async {
           return error('File does not have any content what-so-ever');
         }
         vars[name] = file['content'];
+      }
+      if (action == 'math') {
+        final p = Parser();
+        final vpi = Variable('pi');
+        final cm = ContextModel();
+        cm.bindVariable(vpi, Number(pi));
+        final exp = p.parse(args.sublist(2).join(' '));
+        var val = (exp.evaluate(EvaluationType.REAL, cm) as num).toString();
+        if (val.endsWith('.0')) val = val.replaceAll('.0', '');
+        vars[name] = val;
       }
     } else if (cmd == 'stop') {
       return;
