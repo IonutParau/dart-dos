@@ -1,7 +1,10 @@
 import 'dart:io';
-import '../kernel.dart' show drive, encodedDrive, error;
+import '../kernel.dart' show drive, encodedDrive, error, tmpMode;
 
 void backup(String fileName, {bool silent = false}) {
+  if (tmpMode == true) {
+    return error('Temporary users cannot create backups');
+  }
   if (fileName ==
           Platform.script
               .toFilePath(windows: Platform.isWindows)

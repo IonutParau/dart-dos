@@ -1,8 +1,11 @@
 import 'dart:io' show File, Platform;
 import 'dart:convert' show jsonDecode;
-import '../kernel.dart' show drive, saveDrive, error;
+import '../kernel.dart' show drive, error, saveDrive, tmpMode, userID, users;
 
 void restore(String fileName) {
+  if (tmpMode == true) {
+    return error('Temporary users cannot restore from backups');
+  }
   if (fileName ==
           Platform.script
               .toFilePath(windows: Platform.isWindows)
@@ -17,13 +20,21 @@ void restore(String fileName) {
   if (backup.existsSync()) {
     print('Backup drive found.');
     print('Decoding backup....');
-    var tmpDrive = <String, dynamic>{};
+    var tmpDrive;
     try {
       tmpDrive = jsonDecode(backup.readAsStringSync());
     } catch (e) {
       return error('Drive is not valid JSON or is not decodable.');
     }
-    drive = tmpDrive;
+    final id = userID;
+    if (id >= users.length) {
+      return print(
+        'This drive does not have a user with the same ID as this user.',
+      );
+    } else if (tmpDrive.length == 0) {
+      print('This drive does not have any users');
+    }
+    drive = tmpDrive[id];
     saveDrive();
     print('Restored the backup!');
   } else {

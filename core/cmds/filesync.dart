@@ -1,8 +1,13 @@
 import 'dart:io' show stdin;
 import '../cmd.dart' show path;
-import '../kernel.dart' show drive, error;
+import '../kernel.dart' show drive, error, tmpMode;
 
 void filesync(String action, List<String> args) {
+  if (tmpMode == true) {
+    return print(
+      'Temporary users cannot manage FileSync links',
+    );
+  }
   if (drive['unsafe'] != true && action != 'show') {
     print('Confirm FileSync action? [y/n]');
     final input = stdin.readLineSync();

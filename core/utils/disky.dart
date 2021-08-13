@@ -2,9 +2,14 @@ import 'dart:convert' show jsonDecode, jsonEncode;
 import 'dart:io' show File, Platform, stdin;
 import '../cmd.dart';
 import '../kernel.dart'
-    show blankDrive, createFile, drive, error, saveDrive, write;
+    show blankDrive, createFile, drive, error, saveDrive, tmpMode, write;
 
 void disky() {
+  if (tmpMode == true) {
+    return print(
+      'Temporary users cannot use Disky',
+    );
+  }
   print('[ Disky Integrated Disk Utility ]');
   print(
       'Which tool do you want to use? Select by typing the number next to the tool and hitting enter.');

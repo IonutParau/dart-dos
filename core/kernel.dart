@@ -11,7 +11,8 @@ import 'utils/disky.dart' show healthCheck, realTimeLDOSDriveTranslation;
 final _errorPen = AnsiPen()..red();
 final _succesPen = AnsiPen()..green();
 
-final buildString = 'DartDOS v1.0 Beta Build 7';
+final buildString = 'DartDOS v1.0 Beta Build 8';
+var tmpMode = false;
 
 String get encodedDrive => JsonEncoder.withIndent('  ').convert(_users);
 
@@ -54,6 +55,7 @@ List _users = [];
 var _userID = 0;
 
 void saveDrive() {
+  if (tmpMode == true) return;
   var file = File('drive.json');
   _users[_userID] = drive;
   file.writeAsStringSync(encodedDrive);
@@ -157,14 +159,18 @@ Future bootKernel() async {
     _users = [];
   }
   checkPassword();
-  realTimeLDOSDriveTranslation(); // To make L.U.A. useless
-  await onboot_scripts();
-  if (drive['filesync'] is List) {
+  if (tmpMode == false) {
+    realTimeLDOSDriveTranslation();
+  } // To make L.U.A. useless
+  if (tmpMode == false) await onboot_scripts();
+  if (drive['filesync'] is List && !tmpMode) {
     drive['filesync'] = <String, dynamic>{};
   }
-  saveDrive();
+  if (tmpMode == false) saveDrive();
   succes('Booted up Kernel');
-  if (drive['settings']['diskcheck_on_boot'] == true) healthCheck(silent: true);
+  if (drive['settings']['diskcheck_on_boot'] == true && tmpMode == false) {
+    healthCheck(silent: true);
+  }
   ProcessSignal.sigint.watch().listen((event) {});
 }
 
@@ -175,7 +181,11 @@ void removeCurrentUser() {
   checkPassword(true);
 }
 
+int get userID => _userID;
+List get users => _users;
+
 void checkPassword([bool isLoggingOut = false]) {
+  tmpMode = false;
   if (_users.length > 1 || isLoggingOut) {
     print(
       'Welcome to the log in prompt! Please select a user by number from: ',
@@ -187,22 +197,35 @@ void checkPassword([bool isLoggingOut = false]) {
     if (input == null) exit(0);
     if (input == 'add') {
       write('Username: ');
-      final name = stdin.readLineSync() ?? '';
+      final name = stdin.readLineSync();
+      if (name == null) exit(0);
       write('Password: ');
-      final pass = stdin.readLineSync() ?? '';
+      final pass = stdin.readLineSync();
+      if (pass == null) exit(0);
       final user = blankDrive;
       user['name'] = name;
       user['password'] = pass;
       _users.add(user);
       _userID = _users.length - 1;
+    } else if (input == 'tmp') {
+      drive = blankDrive;
+      tmpMode = true;
+      drive['name'] = 'Temporary User';
+      return;
     } else {
-      _userID = int.tryParse(input) ?? 0;
+      final id = int.tryParse(input);
+      if (id == null) {
+        error('Invalid input');
+        exit(0);
+      }
+      _userID = id;
     }
   } else if (_users.isEmpty) {
     _users.add(blankDrive);
   }
   drive = _users[_userID];
   fixDrive();
+  clear();
 
   if (drive['password'] == '') {
     return;
@@ -210,7 +233,15 @@ void checkPassword([bool isLoggingOut = false]) {
     print('Password protection detected. Please input password');
     while (true) {
       final input = stdin.readLineSync() ?? '';
-      if (input == drive['password']) break;
+      if (input == drive['password']) {
+        if (input == 'now') {
+          succes('The password is now, old man!');
+        }
+        if (input == 'future') {
+          succes('The future is now, old man!');
+        }
+        break;
+      }
       if (input == 'ldos') {
         print('Blendi... is this you making some kind of joke?');
       } else if (input == 'ddos') {
@@ -291,7 +322,12 @@ void createFile(String path, Map<String, dynamic> file) {
   if (path.split('/').last.split('.').length <= 1) {
     return error('Files must have file extensions');
   }
-
+  if (path.split('/').length > 2) {
+    final parentFolder = (path.split('/')..removeLast()).join('/');
+    if (drive[parentFolder] == null) {
+      createFolder(parentFolder);
+    }
+  }
   if (drive[path] == null) {
     drive[path] = file;
     drive[path]['type'] = 'file';
@@ -338,6 +374,12 @@ String readFile(String path) {
 void createFolder(String path) {
   path = path.replaceAll('\n', '');
   path = path.replaceAll('\r', '');
+  if (path.split('/').length > 2) {
+    final parentFolder = (path.split('/')..removeLast()).join('/');
+    if (drive[parentFolder] == null) {
+      createFolder(parentFolder);
+    }
+  }
   if (unsupportedFileNames.contains(path.split('/').last)) {
     return error('Illegal Folder name');
   }

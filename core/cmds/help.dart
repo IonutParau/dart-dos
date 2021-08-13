@@ -41,4 +41,19 @@ void help() {
     'settings - Allows you to change settings. ! Disclaimer ! changing some critical settings to random values might make DartDOS unbootable, or cause system instability.',
   );
   print('hello - Welcomes you! This is called when the commander boots!');
+  print('run <filepath> - Allows you to run a script using DartDOS Runnables');
+  print(
+      'filesync [add/remove/show] <path> - Manages FileSync. In the show action it is optional to put path, it would do nothing if you put it.');
+  print(
+    'mv <path1> <path2> - Moves fies and folders around.',
+  );
+  print(
+    'cp <path1> <path2> - Moves fies and folders around.',
+  );
+  print(
+      'download <path> <url> - Downloads the result given by the url, if it was successfull.');
+  print('cd <path> - Goes into the folder at path');
+  print(
+    'http [get/post/delete/head/put] <url> <headers as name-value pairs> - Makes http request and prints the result.',
+  );
 }
