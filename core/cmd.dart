@@ -1,4 +1,4 @@
-import 'dart:io' show stdin;
+import 'dart:io' show sleep, stdin;
 import 'dart:io' as dio show exit;
 import 'dart:math';
 import 'kernel.dart' hide readFile;
@@ -41,7 +41,7 @@ void bootCommander() async {
   }
 }
 
-Future run(String _path) async {
+Future run(String _path, List<String> params) async {
   final cmdsStr = kernel.readFile(_path);
   final cmdsStrSplit = cmdsStr.split('\n');
   final cmds = <String>[];
@@ -105,15 +105,32 @@ Future run(String _path) async {
           for (var user in users) {
             usersList.add(user);
           }
-          args[i] = args[i].replaceFirst('%users%', usersList.join('\n'));
+          args[i] = args[i].replaceFirst('%users%', usersList.join(' '));
+        }
+        while (args[i].contains('%param%')) {
+          args[i] = args[i].replaceFirst('%param%', params.join(' '));
         }
         args[i] = args[i]
             .replaceAll('%unsafe%', drive['settings']['unsafe'].toString());
         args[i] = args[i].replaceAll('%scriptname%', path.split('/').last);
         args[i] = args[i].replaceAll('%scriptpath%', _path);
         args[i] = args[i].replaceAll('%name%', drive['name']);
-        // args[i] = args[i].replaceAll('%nil%', '');
-        // args[i] = args[i].replaceAll('%null%', '');
+        args[i] = args[i].replaceAll('%nil%', '');
+        args[i] = args[i].replaceAll('%null%', '');
+        if (args[i].contains('%dir%')) {
+          var wantedLength = path.split('/').length + (path == '/' ? 0 : 1);
+          var dir = [];
+          drive.forEach(
+            (key, _) {
+              if (key.split('/').length == wantedLength &&
+                  key.startsWith(path) &&
+                  key != path) {
+                dir.add(key);
+              }
+            },
+          );
+          args[i] = args[i].replaceAll('%dir%', dir.join(' '));
+        }
       }
       vars.forEach(
         (key, value) {
@@ -252,6 +269,19 @@ Future run(String _path) async {
           List value = args.sublist(2);
           vars[name] = value;
         }
+        if (action == 'param') {
+          var pari = int.tryParse(args[2]);
+          if (pari == null) {
+            vars[name] = '';
+            continue;
+          }
+          if (pari < 1 || pari > params.length) {
+            vars[name] = '';
+            continue;
+          }
+          var value = params[pari - 1];
+          vars[name] = value;
+        }
         if (action == 'http') {
           if (drive['settings']['unsafe'] != true &&
               permissions['network'] != true) {
@@ -316,6 +346,10 @@ Future run(String _path) async {
         } else {
           await terminal(cmd, args);
         }
+      } else if (cmd == 'resetfield') {
+        return error(
+          'Script attempted to run user-only command known as $cmd.',
+        );
       } else if (cmd == 'list') {
         var name = args[0];
         var action = args[1];
@@ -440,7 +474,7 @@ Future terminal(String cmd, List<String> args) async {
       if (!dirPath.startsWith('/')) {
         dirPath = path == '/' ? '/$dirPath' : '$path/$dirPath';
       }
-      return run(dirPath);
+      return run(dirPath, args.sublist(1));
     }
     return error('Not enough arguments.');
   }
@@ -452,7 +486,7 @@ Future terminal(String cmd, List<String> args) async {
       }
       final unsafe = drive['settings']['unsafe'];
       drive['settings']['unsafe'] = true;
-      await run(dirPath);
+      await run(dirPath, args.sublist(1));
       drive['settings']['unsafe'] = unsafe;
       return;
     }
@@ -652,13 +686,69 @@ Future terminal(String cmd, List<String> args) async {
   }
   if (cmd == 'deluser') {
     print(
-        'Are you sure you want to delete the user you are currently in? [y/n]');
+      'Are you sure you want to delete the user you are currently in? [y/n]',
+    );
     final answer = stdin.readLineSync();
     if (answer == 'y') {
       clear();
       return removeCurrentUser();
     }
     return;
+  }
+  if (cmd == 'whoami') {
+    return print(drive['name'] ?? 'Unknown');
+  }
+  if (cmd == 'resetfield') {
+    if (args.isNotEmpty) {
+      return resetField(args[0]);
+    }
+    return error('Not enough arguments.');
+  }
+  if (cmd == 'cmd') {
+    if (args.isNotEmpty) {
+      if (args[0] == 'add') {
+        if (args.length < 3) return error('Not enough arguments');
+        var dirPath = args[2];
+        if (!dirPath.startsWith('/')) {
+          dirPath = path == '/' ? '/$dirPath' : '$path/$dirPath';
+        }
+        drive['cmd_scripts'][args[1]] = dirPath;
+        return;
+      } else if (args[0] == 'remove') {
+        if (args.length < 2) return error('Not enough arguments');
+        drive['cmd_scripts'].remove(args[1]);
+        return;
+      } else if (args[0] == 'show') {
+        if (drive['cmd_scripts'].length == 0) {
+          return print('No special commands found.');
+        } else {
+          drive['cmd_scripts'].forEach(
+            (k, v) {
+              print('$k - $v');
+            },
+          );
+        }
+      }
+    }
+    return error('Not enough arguments.');
+  }
+  if (cmd == 'delay') {
+    if (args.isNotEmpty) {
+      final duration = int.tryParse(args[0]);
+      if (duration == null) return error('${args[0]} is not a number!');
+      return sleep(Duration(milliseconds: duration));
+    }
+    return error('Not enough arguments.');
+  }
+  var scriptPath = cmd;
+  if (!scriptPath.startsWith('/')) {
+    scriptPath = path == '/' ? '/$scriptPath' : '$path/$scriptPath';
+  }
+  if (drive['$scriptPath.run'] != null) {
+    return await run('$scriptPath.run', args);
+  }
+  if (drive['cmd_scripts'][cmd] != null) {
+    return await run(drive['cmd_scripts'][cmd] as String, args);
   }
   error('Invalid command.');
 }

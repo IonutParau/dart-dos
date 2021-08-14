@@ -99,6 +99,24 @@ void healthCheck({bool silent = false}) {
           drive[key].remove(element);
         },
       );
+    } else if (key == 'cmd_scripts') {
+      if (!(drive[key] is Map)) {
+        drive[key] = <String, String>{};
+      }
+      final listOfRemovals = [];
+      drive[key].forEach(
+        (k, v) {
+          if (drive[v] == null) {
+            if (!silent) print('$v is a command script that does not exist.');
+            listOfRemovals.add(v);
+          }
+        },
+      );
+      listOfRemovals.forEach(
+        (element) {
+          drive[key].remove(element);
+        },
+      );
     } else {
       if (value is Map) {
         if (value['type'] != 'file' && value['type'] != 'folder') {

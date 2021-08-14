@@ -6,6 +6,7 @@ import 'package:ansicolor/ansicolor.dart' show AnsiPen;
 import 'package:dart_console/dart_console.dart' show Console;
 import 'package:dart_console/dart_console.dart';
 import 'cmd.dart' show run;
+import 'cmds/hello.dart';
 import 'utils/disky.dart' show healthCheck, realTimeLDOSDriveTranslation;
 
 final _errorPen = AnsiPen()..red();
@@ -35,19 +36,25 @@ Map<String, dynamic> get blankDrive => {
         'unsafe': false,
         'tabspacing': 2,
       },
-      'filesync': {},
+      'filesync': <String, String>{},
       'onboot_scripts': <String>[],
+      'cmd_scripts': <String, String>{},
       'name': 'DartDOS User',
       'password': '',
     };
 
 void fixDrive() {
   final goodDrive = blankDrive;
+  var fixedDrive = false;
   goodDrive.forEach(
     (key, value) {
-      if (drive[key] == null) drive[key] = value;
+      if (drive[key] == null) {
+        drive[key] = value;
+        fixedDrive = true;
+      }
     },
   );
+  if (fixedDrive) saveDrive();
 }
 
 List _users = [];
@@ -133,7 +140,7 @@ Future onboot_scripts() async {
     final str = drive['onboot_scripts'][i];
     if (ran.contains(str) == false) {
       ran.add(str);
-      await run(str);
+      await run(str, []);
     }
   }
 }
@@ -191,7 +198,15 @@ void checkPassword([bool isLoggingOut = false]) {
       'Welcome to the log in prompt! Please select a user by number from: ',
     );
     for (var i = 0; i < _users.length; i++) {
-      print('${_users[i]['name']} [$i]');
+      try {
+        if (_users[i]['name'] == null) throw 'Unknown name';
+        print('${_users[i]['name']} [$i]');
+      } catch (e) {
+        print(
+          _errorPen('[${_users[i] is Map ? 'UNKNOWN' : 'CORRUPTED'}]') +
+              ' [$i]',
+        );
+      }
     }
     final input = stdin.readLineSync();
     if (input == null) exit(0);
@@ -223,7 +238,13 @@ void checkPassword([bool isLoggingOut = false]) {
   } else if (_users.isEmpty) {
     _users.add(blankDrive);
   }
-  drive = _users[_userID];
+  if (_users[_userID] is Map) {
+    drive = _users[_userID];
+  } else {
+    _users[_userID] = blankDrive;
+    drive = _users[_userID];
+    saveDrive();
+  }
   fixDrive();
   clear();
 
@@ -262,6 +283,7 @@ void checkPassword([bool isLoggingOut = false]) {
       error('Incorrect password.');
     }
     print('Password is correct.');
+    if (isLoggingOut) hello();
   }
 }
 
@@ -391,17 +413,17 @@ void createFolder(String path) {
   }
 }
 
-void deleteFolder(String path) {
+void deleteFolder(String path, [bool silent = false]) {
   path = path.replaceAll('\n', '');
   path = path.replaceAll('\r', '');
   if (drive[path] == null) return error('Folder does not exist');
   if (drive[path]['type'] != 'folder') return error('$path is not a folder.');
   drive.remove(path);
-  print('Deleting $path');
+  if (!silent) print('Deleting $path');
   drive.removeWhere(
     (key, value) {
       var deleted = key.startsWith(path);
-      if (deleted) print('Deleting $key.');
+      if (deleted && !silent) print('Deleting $key.');
       return deleted;
     },
   );
