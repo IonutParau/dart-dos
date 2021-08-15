@@ -33,7 +33,7 @@ void paper(String path) {
         return;
       } else if (cmd == '.save') {
         drive[path]['content'] = content;
-        saveDrive();
+        if (drive['settings']['always-save-drive'] == true) saveDrive();
       } else if (cmd == '.set') {
         i = int.parse(args[0]);
       } else if (cmd == '.m') {

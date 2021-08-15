@@ -5,5 +5,5 @@ void mkfile(String path) {
     path,
     {'type': 'file', 'content': ''},
   );
-  saveDrive();
+  if (drive['settings']['always-save-drive'] == true) saveDrive();
 }

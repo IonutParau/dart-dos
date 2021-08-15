@@ -27,5 +27,5 @@ void settings() {
     drive['settings'][input] = setting;
   }
 
-  saveDrive();
+  if (drive['settings']['always-save-drive'] == true) saveDrive();
 }

@@ -17,5 +17,5 @@ void deldir(String path) {
   } else {
     deleteFolder(path);
   }
-  saveDrive();
+  if (drive['settings']['always-save-drive'] == true) saveDrive();
 }

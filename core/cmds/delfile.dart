@@ -16,5 +16,5 @@ void delfile(String path) {
   } else {
     deleteFile(path);
   }
-  saveDrive();
+  if (drive['settings']['always_save_drive'] == true) saveDrive();
 }

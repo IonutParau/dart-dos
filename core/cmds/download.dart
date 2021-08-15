@@ -13,7 +13,7 @@ Future<void> download(String path, String url) async {
     if (drive[path] == null) drive[path] = {'type': 'file', 'content': ''};
     drive[path]['content'] = downloaded.body;
     drive[path]['content'] = drive[path]['content'].replaceAll('\r\n', '\n');
-    saveDrive();
+    if (drive['settings']['always_save_drive'] == true) saveDrive();
   } else {
     print('Download failed. Error code: ${downloaded.statusCode}');
   }

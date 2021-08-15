@@ -35,6 +35,7 @@ Map<String, dynamic> get blankDrive => {
         'diskcheck_on_boot': true,
         'unsafe': false,
         'tabspacing': 2,
+        'always_save_drive': false,
       },
       'filesync': <String, String>{},
       'onboot_scripts': <String>[],
@@ -54,7 +55,7 @@ void fixDrive() {
       }
     },
   );
-  if (fixedDrive) saveDrive();
+  if (fixedDrive && drive['settings']['always_save_drive'] == true) saveDrive();
 }
 
 List _users = [];
@@ -173,7 +174,9 @@ Future bootKernel() async {
   if (drive['filesync'] is List && !tmpMode) {
     drive['filesync'] = <String, dynamic>{};
   }
-  if (tmpMode == false) saveDrive();
+  if (tmpMode == false && drive['settings']['always_save_drive'] == true) {
+    saveDrive();
+  }
   succes('Booted up Kernel');
   if (drive['settings']['diskcheck_on_boot'] == true && tmpMode == false) {
     healthCheck(silent: true);
@@ -243,7 +246,7 @@ void checkPassword([bool isLoggingOut = false]) {
   } else {
     _users[_userID] = blankDrive;
     drive = _users[_userID];
-    saveDrive();
+    if (drive['settings']['always_save_drive'] == true) saveDrive();
   }
   fixDrive();
   clear();
@@ -309,7 +312,7 @@ void fileSyncInit() {
       drive[k]['content'] = f.readAsStringSync();
     },
   );
-  saveDrive();
+  if (drive['settings']['always_save_drive'] == true) saveDrive();
 }
 
 void writeToFile(String path, Map<String, dynamic> newFile) {
@@ -325,7 +328,7 @@ void writeToFile(String path, Map<String, dynamic> newFile) {
       f.writeAsStringSync(newFile['content']);
     }
   }
-  return saveDrive();
+  if (drive['settings']['always_save_drive'] == true) return saveDrive();
 }
 
 final unsupportedFileNames = <String>{
@@ -353,7 +356,11 @@ void createFile(String path, Map<String, dynamic> file) {
   if (drive[path] == null) {
     drive[path] = file;
     drive[path]['type'] = 'file';
-    return saveDrive();
+    if (drive['settings']['always_save_drive'] == true) {
+      return saveDrive();
+    } else {
+      return;
+    }
   }
   return error('Error: File already exists');
 }
@@ -367,7 +374,7 @@ void deleteFile(String path) {
   if (drive[path] == null) return error('File does not exist');
   if (drive[path]['type'] == 'file') {
     drive.remove(path);
-    saveDrive();
+    if (drive['settings']['always_save_drive'] == true) saveDrive();
   } else {
     return error('Path is not file');
   }
@@ -407,7 +414,7 @@ void createFolder(String path) {
   }
   if (drive[path] == null) {
     drive[path] = {'type': 'folder'};
-    saveDrive();
+    if (drive['settings']['always_save_drive'] == true) saveDrive();
   } else {
     return error('Folder already exists');
   }
@@ -427,5 +434,5 @@ void deleteFolder(String path, [bool silent = false]) {
       return deleted;
     },
   );
-  saveDrive();
+  if (drive['settings']['always_save_drive'] == true) saveDrive();
 }

@@ -16,5 +16,5 @@ void changepass(String pass) {
     final answer = stdin.readLineSync();
     if (answer == 'y') drive['password'] = pass;
   }
-  saveDrive();
+  if (drive['settings']['always_save_drive'] == true) saveDrive();
 }

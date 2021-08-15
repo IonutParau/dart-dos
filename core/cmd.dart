@@ -405,6 +405,8 @@ Future run(String _path, List<String> params) async {
         } else {
           return print('Script attempted to perform forbitten activity.');
         }
+      } else if (cmd == 'exit') {
+        return print('Script attempted to perform forbitten activity.');
       } else {
         await terminal(cmd, args);
       }

@@ -6,5 +6,5 @@ void changeName(String newName) {
     newName = 'DartDOS User';
   }
   drive['name'] = newName;
-  saveDrive();
+  if (drive['settings']['always_save_drive'] == true) saveDrive();
 }
