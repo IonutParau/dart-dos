@@ -36,6 +36,7 @@ Map<String, dynamic> get blankDrive => {
         'unsafe': false,
         'tabspacing': 2,
         'always_save_drive': false,
+        'onboot_timeout': 20,
       },
       'filesync': <String, String>{},
       'onboot_scripts': <String>[],
@@ -43,6 +44,8 @@ Map<String, dynamic> get blankDrive => {
       'name': 'DartDOS User',
       'password': '',
     };
+
+bool get unsafe => (drive['settings']['unsafe'] == true);
 
 void fixDrive() {
   final goodDrive = blankDrive;
@@ -141,7 +144,7 @@ Future onboot_scripts() async {
     final str = drive['onboot_scripts'][i];
     if (ran.contains(str) == false) {
       ran.add(str);
-      await run(str, []);
+      await run(str, [], true);
     }
   }
 }

@@ -1,5 +1,5 @@
 import 'dart:io' as dio show exit, stdin;
-import '../kernel.dart' show drive, succes, tmpMode, write;
+import '../kernel.dart' show drive, saveDrive, succes, tmpMode, write;
 import 'backup.dart';
 
 void exit() {
@@ -7,6 +7,7 @@ void exit() {
     if (drive['settings']['autosave'] == true && tmpMode == false) {
       backup('backup.json', silent: true);
     }
+    saveDrive();
     succes('Goodbye!');
     dio.exit(0);
   }

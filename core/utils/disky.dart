@@ -179,23 +179,27 @@ void heal() {
     if (key == 'settings') {
       // Settings healing utility
       if (!(value is Map)) {
+        print('$key was broken! Fixed that.');
         drive[key] = blankDrive['settings'];
         healed++;
       }
     } else if (key == 'password') {
       // Password healing utility
       if (!(value is String)) {
+        print('$key was broken! Fixed that.');
         drive[key] = blankDrive['password'];
         healed++;
       }
     } else if (key == 'name') {
       // Password healing utility
       if (!(value is String)) {
+        print('$key was broken! Fixed that.');
         drive[key] = blankDrive['name'];
         healed++;
       }
     } else if (key == 'filesync') {
       if (!(value is Map)) {
+        print('$key was broken! Fixed that.');
         drive[key] = blankDrive['filesync'];
         healed++;
       }
@@ -212,6 +216,17 @@ void heal() {
           }
         },
       );
+    } else if (key == 'onboot_scripts') {
+      if (!(value is List)) {
+        print('$key was broken! Fixed that.');
+        drive[key] = blankDrive[key];
+        healed++;
+      }
+    } else if (key == 'cmd_scripts') {
+      if (!(value is Map)) {
+        drive[key] = blankDrive[key];
+        healed++;
+      }
     } else {
       if (value is Map) {
         if (key.split('/').last.split('.').length > 1) {

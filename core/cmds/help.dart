@@ -8,6 +8,15 @@ void help() {
     'disky - Sends you to the Disky Integrated Disk Utility screen. Disky is usefull for setting up FileSync and fixing broken or unstable drives.',
   );
   print(
+    'paper <file> - Uses paper to open the file <file>. Paper is a more complex but also more powerfull file editor.',
+  );
+  print(
+    'paint <file> - If <file> exists, opens it to write to it with a custom image format. It is very complex, and thus, advanced.',
+  );
+  print(
+    'render <file> - If <file> exists, it will render the file to the screen using the custom image format.',
+  );
+  print(
     'backup <filename> - Backs up the entire drive to a file in the host OS named after the first parameter given to this command.',
   );
   print(
@@ -56,4 +65,23 @@ void help() {
   print(
     'http [get/post/delete/head/put] <url> <headers as name-value pairs> - Makes http request and prints the result.',
   );
+  print(
+    'echo [message] - Prints to the console the [message], this message can even be split in multiple arguments.',
+  );
+  print(
+    'write [message] - Writes to the console the [message], this message can even be split in multiple arguments.',
+  );
+  print(
+    'cecho <color> [message] - Works just like echo, except it will print it colored with <color>, <color> must be a valid hexcode.',
+  );
+  print(
+    'cwrite <color> [message] - Works just like write, except it will write it colored with <color>, <color> must be a valid hexcode.',
+  );
+  print('about - Says information about DartDOS!');
+  print(
+    'fieldedit - Opens up the Field Editor, allowing you to set fields to certain values. If the value is the word null, the field will be removed. If the field does not exist, it will be created.',
+  );
+  print('setfield <field> <value> - Sets the field <field> to <value>');
+  print('resetfield <field> - Resets the field <field> to its default value.');
+  print('save/savedrive/sd - Saves the current drive to the drive.json file.');
 }

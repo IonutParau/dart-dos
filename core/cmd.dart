@@ -10,6 +10,7 @@ import 'package:math_expressions/math_expressions.dart';
 import 'package:http/http.dart' as http show get, post, delete;
 
 var path = '/';
+final onboot_watch = Stopwatch();
 
 void bootCommander() async {
   hello();
@@ -41,7 +42,8 @@ void bootCommander() async {
   }
 }
 
-Future run(String _path, List<String> params) async {
+Future run(String _path, List<String> params, [bool timed = false]) async {
+  if (timed) onboot_watch.start();
   final cmdsStr = kernel.readFile(_path);
   final cmdsStrSplit = cmdsStr.split('\n');
   final cmds = <String>[];
@@ -63,6 +65,12 @@ Future run(String _path, List<String> params) async {
   final loops = <int, int>{};
   var latestLoop = <int>{};
   for (var i = 0; i < cmds.length; i++) {
+    if (onboot_watch.elapsed.inSeconds ==
+        (drive['settings']['onboot_timeout'] ?? 20)) {
+      onboot_watch.reset();
+      onboot_watch.stop();
+      return error('Script timed out.');
+    }
     final cmd = cmds[i].split(' ').first;
     final args = cmds[i].split(' ').sublist(1);
 
@@ -110,6 +118,7 @@ Future run(String _path, List<String> params) async {
         while (args[i].contains('%param%')) {
           args[i] = args[i].replaceFirst('%param%', params.join(' '));
         }
+        args[i] = args[i].replaceAll('%build%', buildString);
         args[i] = args[i]
             .replaceAll('%unsafe%', drive['settings']['unsafe'].toString());
         args[i] = args[i].replaceAll('%scriptname%', path.split('/').last);
@@ -147,7 +156,23 @@ Future run(String _path, List<String> params) async {
           }
         },
       );
-      if (cmd == 'here') {
+      if (cmd == '') {
+        // this is for empty spaces
+      } else if (cmd.startsWith('//')) {
+        // This is for epic comments
+      } else if (cmd == 'sd' || cmd == 'savedrive' || cmd == 'save') {
+        if (permissions['save_to_drive'] == null && !unsafe) {
+          print(
+            '$path wants permission to save to drive. Do you give it permission to do such activity? [y/n]',
+          );
+          final input = stdin.readLineSync();
+          if (input == null) return;
+          permissions['save_to_drive'] = (input == 'y');
+        }
+        if (permissions['save_to_drive'] == false) {
+          return error('Script attempted to perform forbitten activity.');
+        }
+      } else if (cmd == 'here') {
       } else if (cmd == 'goto') {
         i = cmds.indexOf('here ${args[0]}');
       } else if (cmd == 'if') {
@@ -283,8 +308,7 @@ Future run(String _path, List<String> params) async {
           vars[name] = value;
         }
         if (action == 'http') {
-          if (drive['settings']['unsafe'] != true &&
-              permissions['network'] != true) {
+          if (!unsafe && permissions['network'] != true) {
             print(
               '$path is trying to make a network request, do you give it permission to? [y/n]',
             );
@@ -346,10 +370,6 @@ Future run(String _path, List<String> params) async {
         } else {
           await terminal(cmd, args);
         }
-      } else if (cmd == 'resetfield') {
-        return error(
-          'Script attempted to run user-only command known as $cmd.',
-        );
       } else if (cmd == 'list') {
         var name = args[0];
         var action = args[1];
@@ -382,31 +402,46 @@ Future run(String _path, List<String> params) async {
       } else if (cmd == 'stop') {
         return;
       } else if (cmd == 'onboot') {
-        if (drive['settings']['unsafe'] == true) {
+        if (unsafe) {
           await terminal(cmd, args);
         } else {
           return print('Script attempted to perform forbitten activity.');
         }
       } else if (cmd == 'deluser') {
-        if (drive['settings']['unsafe'] == true) {
+        if (unsafe) {
           return await terminal(cmd, args);
         } else {
           return print('Script attempted to perform forbitten activity.');
         }
       } else if (cmd == 'logout') {
-        if (drive['settings']['unsafe'] == true) {
+        if (unsafe) {
           return await terminal(cmd, args);
         } else {
           return print('Script attempted to perform forbitten activity.');
         }
       } else if (cmd == 'backup' || cmd == 'restore') {
-        if (drive['settings']['unsafe'] == true) {
+        if (unsafe) {
           await terminal(cmd, args);
         } else {
           return print('Script attempted to perform forbitten activity.');
         }
       } else if (cmd == 'exit') {
         return print('Script attempted to perform forbitten activity.');
+      } else if (cmd == 'resetfield' ||
+          cmd == 'fieldedit' ||
+          cmd == 'setfield') {
+        if (permissions['field_management'] == null && !unsafe) {
+          print(
+            '$path wants permission to make changes to system fields. Do you give it permission to change system fields? [y/n]',
+          );
+          final input = stdin.readLineSync();
+          if (input == null) return;
+          permissions['field_management'] = (input == 'y');
+        }
+        if (permissions['field_management'] == false) {
+          return error('Script attempted to perform forbitten activity.');
+        }
+        await terminal(cmd, args);
       } else {
         await terminal(cmd, args);
       }
@@ -432,7 +467,27 @@ Future terminal(String cmd, List<String> args) async {
       cmd == 'stop') return exit();
   if (cmd == 'help') return help();
   if (cmd == 'echo') return echo(args.join(' '));
+  if (cmd == 'cecho') {
+    if (args.length < 2) return error('Not enough arguments.');
+    late Color color;
+    try {
+      color = Color(args[0]);
+    } catch (e) {
+      return error('Invalid color');
+    }
+    return print(colored(args.sublist(1).join(' '), color));
+  }
   if (cmd == 'write') return write(args.join(' '));
+  if (cmd == 'cwrite') {
+    if (args.length < 2) return error('Not enough arguments.');
+    late Color color;
+    try {
+      color = Color(args[0]);
+    } catch (e) {
+      return error('Invalid color');
+    }
+    return write(colored(args.sublist(1).join(' '), color));
+  }
   if (cmd == 'cls' || cmd == 'clear') return clear();
   if (cmd == 'backup') {
     if (args.isNotEmpty) return backup(args[0]);
@@ -741,6 +796,31 @@ Future terminal(String cmd, List<String> args) async {
       return sleep(Duration(milliseconds: duration));
     }
     return error('Not enough arguments.');
+  }
+  if (cmd == 'fieldedit') {
+    return fieldedit();
+  }
+  if (cmd == 'setfield') {
+    if (args.length < 2) return error('Not enough arguments');
+    return setfield(args[0], args[1]);
+  }
+  if (cmd == 'about') {
+    print(
+      'You are running $buildString, which was developed by IonutDoesStuffYT#1595',
+    );
+    print(
+      'This project was an experiment, please do not use this to store essential information or important files.',
+    );
+    if (buildString.toLowerCase().contains('beta')) {
+      print(
+        'You are also running a beta build, beta builds can have issues in stability or security, and their features might not work perfectly.',
+      );
+    }
+    return;
+  }
+  if (cmd == 'sd' || cmd == 'savedrive' || cmd == 'save') {
+    print('Saving drive...');
+    return saveDrive();
   }
   var scriptPath = cmd;
   if (!scriptPath.startsWith('/')) {
