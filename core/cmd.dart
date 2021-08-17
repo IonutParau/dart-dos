@@ -172,6 +172,7 @@ Future run(String _path, List<String> params, [bool timed = false]) async {
         if (permissions['save_to_drive'] == false) {
           return error('Script attempted to perform forbitten activity.');
         }
+        await terminal(cmd, args);
       } else if (cmd == 'here') {
       } else if (cmd == 'goto') {
         i = cmds.indexOf('here ${args[0]}');
@@ -700,7 +701,7 @@ Future terminal(String cmd, List<String> args) async {
           dirPath = path == '/' ? '/$dirPath' : '$path/$dirPath';
         }
         drive['onboot_scripts'].add(dirPath);
-        saveDrive();
+        if (drive['settings']['always_save_drive'] == true) saveDrive();
         return;
       } else if (args[0] == 'remove') {
         var dirPath = args[1];
@@ -708,7 +709,7 @@ Future terminal(String cmd, List<String> args) async {
           dirPath = path == '/' ? '/$dirPath' : '$path/$dirPath';
         }
         drive['onboot_scripts'].remove(dirPath);
-        saveDrive();
+        if (drive['settings']['always_save_drive'] == true) saveDrive();
         return;
       }
     } else {
