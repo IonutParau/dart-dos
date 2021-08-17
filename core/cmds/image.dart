@@ -39,7 +39,7 @@ void renderImage(String content) {
       final char = entries[i];
       if (textureRows.last.length < width) {
         textureRows[textureRows.length - 1] += '@';
-        write(colored('@', Color(char)));
+        write(colored('︎  ', Color(char), Color(char)));
       }
       if (textureRows.last.length == width) {
         textureRows.add('');

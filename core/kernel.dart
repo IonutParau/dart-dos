@@ -12,14 +12,14 @@ import 'utils/disky.dart' show healthCheck, realTimeLDOSDriveTranslation;
 final _errorPen = AnsiPen()..red();
 final _succesPen = AnsiPen()..green();
 
-final buildString = 'DartDOS v1.0 Beta Build 8';
+final buildString = 'DartDOS v1.0';
 var tmpMode = false;
 
 String get encodedDrive => JsonEncoder.withIndent('  ').convert(_users);
 
 void showCrashScreen(String errorMessage, String errorSource) {
   clear();
-  print('[ Crash Screen Beta ]');
+  print('[ Crash Screen ]');
   error('A critical error has occured!');
   print(
     'Your system has detected a critical error somewhere. Depending on the source of the problem, the system might be attempting to fix it.',
@@ -52,7 +52,7 @@ void fixDrive() {
   var fixedDrive = false;
   goodDrive.forEach(
     (key, value) {
-      if (drive[key] == null) {
+      if (drive[key] == null || drive[key].runtimeType != value.runtimeType) {
         drive[key] = value;
         fixedDrive = true;
       }
@@ -93,8 +93,9 @@ class Color {
   }
 }
 
-String colored(String msg, Color color) {
+String colored(String msg, Color color, [Color? bg]) {
   var pen = AnsiPen()..rgb(r: color.r, g: color.g, b: color.b);
+  if (bg != null) pen.rgb(r: bg.r, g: bg.g, b: bg.b, bg: true);
   return pen(msg);
 }
 

@@ -29,7 +29,7 @@ void paint(String path) {
       final char = imageData[i];
       if (renderStrings.last.length < width) {
         renderStrings[renderStrings.length - 1] += '@';
-        write(colored('@', char));
+        write(colored('︎  ', char, char));
       }
       if (renderStrings.last.length == width) {
         renderStrings.add('');

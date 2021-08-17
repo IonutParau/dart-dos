@@ -822,6 +822,30 @@ Future terminal(String cmd, List<String> args) async {
     print('Saving drive...');
     return saveDrive();
   }
+  if (cmd == 'mv') {
+    if (args.length < 2) return error('Not enough arguments.');
+    var place1 = args[0];
+    if (!place1.startsWith('/')) {
+      place1 = path == '/' ? '/$place1' : '$path/$place1';
+    }
+    var place2 = args[1];
+    if (!place2.startsWith('/')) {
+      place2 = path == '/' ? '/$place2' : '$path/$place2';
+    }
+    return mv(place1, place2);
+  }
+  if (cmd == 'cp') {
+    if (args.length < 2) return error('Not enough arguments.');
+    var place1 = args[0];
+    if (!place1.startsWith('/')) {
+      place1 = path == '/' ? '/$place1' : '$path/$place1';
+    }
+    var place2 = args[1];
+    if (!place2.startsWith('/')) {
+      place2 = path == '/' ? '/$place2' : '$path/$place2';
+    }
+    return cp(place1, place2);
+  }
   var scriptPath = cmd;
   if (!scriptPath.startsWith('/')) {
     scriptPath = path == '/' ? '/$scriptPath' : '$path/$scriptPath';

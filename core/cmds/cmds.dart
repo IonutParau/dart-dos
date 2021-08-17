@@ -22,3 +22,5 @@ export 'apps.dart';
 export 'filesync.dart';
 export 'http.dart';
 export 'resetField.dart';
+export 'mv.dart';
+export 'cp.dart';

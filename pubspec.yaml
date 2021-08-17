@@ -8,7 +8,6 @@ environment:
 dependencies:
   ansicolor: ^2.0.1
   dart_console: ^1.0.0
-  encrypt: ^5.0.1
   http: ^0.13.3
   math_expressions: ^2.2.0
   path: ^1.8.0
