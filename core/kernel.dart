@@ -8,6 +8,7 @@ import 'package:dart_console/dart_console.dart';
 import 'cmd.dart' show run;
 import 'cmds/hello.dart';
 import 'utils/disky.dart' show healthCheck, realTimeLDOSDriveTranslation;
+import 'utils/intro.dart';
 
 final _errorPen = AnsiPen()..red();
 final _succesPen = AnsiPen()..green();
@@ -169,6 +170,14 @@ Future bootKernel() async {
     print('Creating virtual drive...');
     driveFile.createSync();
     _users = [];
+    print('Would you like a introduction? [y/n]');
+    final answer = stdin.readLineSync();
+    if (answer == 'y' || answer == 'yes') {
+      print('Displaying epic introduction sequence...');
+      intro();
+    } else {
+      print('Ok, no introduction I guess.');
+    }
   }
   checkPassword();
   if (tmpMode == false) {

@@ -5,6 +5,7 @@ import 'kernel.dart' hide readFile;
 import 'kernel.dart' as kernel show readFile;
 import 'games/games.dart';
 import 'cmds/cmds.dart';
+import 'utils/intro.dart';
 import 'utils/utils.dart';
 import 'package:math_expressions/math_expressions.dart';
 import 'package:http/http.dart' as http show get, post, delete;
@@ -846,6 +847,9 @@ Future terminal(String cmd, List<String> args) async {
       place2 = path == '/' ? '/$place2' : '$path/$place2';
     }
     return cp(place1, place2);
+  }
+  if (cmd == 'intro') {
+    return intro();
   }
   var scriptPath = cmd;
   if (!scriptPath.startsWith('/')) {
