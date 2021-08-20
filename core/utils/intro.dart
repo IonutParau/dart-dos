@@ -1,7 +1,10 @@
 import 'dart:io';
 import '../kernel.dart';
 
+bool _quickIntro = false;
+
 void slowPrint(String msg) {
+  if (_quickIntro) return print(msg);
   for (var char in msg.split('')) {
     write(char);
     sleep(Duration(milliseconds: 50));
@@ -10,6 +13,8 @@ void slowPrint(String msg) {
 }
 
 void intro() {
+  print('You you like to make the introduction quickly? [y/n]');
+  _quickIntro = (stdin.readLineSync() == 'y');
   slowPrint(
     '$buildString introduction screen.\nWe will introduce you to the basic usage of DartDOS.',
   );

@@ -1,4 +1,5 @@
 import '../kernel.dart' show drive, buildString;
+import 'dart:math';
 
 void hello() {
   print('Hello ${drive['name']} and welcome to $buildString!');
@@ -9,6 +10,11 @@ void hello() {
     );
     print(
       'In other words, you will not resieve any more beta builds if you leak this to non-permitted users.',
+    );
+  }
+  if (Random().nextDouble() > 0.99) {
+    print(
+      '(also... please try out LuaDOS, it is good competition. Also try out Flicko it cool)',
     );
   }
 }

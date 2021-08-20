@@ -41,6 +41,8 @@ Map<String, dynamic> get blankDrive => {
       },
       'filesync': <String, String>{},
       'onboot_scripts': <String>[],
+      'oncontent_scripts': <String>[],
+      'oncommand_scripts': <String>[],
       'cmd_scripts': <String, String>{},
       'name': 'DartDOS User',
       'password': '',
@@ -53,10 +55,14 @@ void fixDrive() {
   var fixedDrive = false;
   goodDrive.forEach(
     (key, value) {
-      if (drive[key] == null || drive[key].runtimeType != value.runtimeType) {
+      if (drive[key] == null) {
         drive[key] = value;
         fixedDrive = true;
       }
+      // if (drive[key].runtimeType != value.runtimeType) {
+      //   drive[key] = value;
+      //   fixedDrive = true;
+      // }
     },
   );
   if (fixedDrive && drive['settings']['always_save_drive'] == true) saveDrive();

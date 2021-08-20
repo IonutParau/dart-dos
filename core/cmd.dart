@@ -173,7 +173,7 @@ Future run(String _path, List<String> params, [bool timed = false]) async {
         if (permissions['save_to_drive'] == false) {
           return error('Script attempted to perform forbitten activity.');
         }
-        await terminal(cmd, args);
+        await terminal(cmd, args, true);
       } else if (cmd == 'here') {
       } else if (cmd == 'goto') {
         i = cmds.indexOf('here ${args[0]}');
@@ -276,6 +276,10 @@ Future run(String _path, List<String> params, [bool timed = false]) async {
             dirPath = path == '/' ? '/$dirPath' : '$path/$dirPath';
           }
           final file = drive[dirPath];
+          if (file == null) {
+            vars[name] = '';
+            continue;
+          }
           if (file['type'] != 'file') return error('$dirPath is not file');
           if (file['content'] == null) {
             return error('File does not have any content what-so-ever');
@@ -354,7 +358,7 @@ Future run(String _path, List<String> params, [bool timed = false]) async {
         }
       } else if (cmd == 'unsaferun') {
         if (drive['settings']['unsafe'] == true) {
-          await terminal(cmd, args);
+          await terminal(cmd, args, true);
         } else {
           return error('Script attempted to perform illegal operation.');
         }
@@ -370,7 +374,7 @@ Future run(String _path, List<String> params, [bool timed = false]) async {
           }
           permissions['network'] = (answer == 'y');
         } else {
-          await terminal(cmd, args);
+          await terminal(cmd, args, true);
         }
       } else if (cmd == 'list') {
         var name = args[0];
@@ -405,19 +409,19 @@ Future run(String _path, List<String> params, [bool timed = false]) async {
         return;
       } else if (cmd == 'onboot') {
         if (unsafe) {
-          await terminal(cmd, args);
+          await terminal(cmd, args, true);
         } else {
           return print('Script attempted to perform forbitten activity.');
         }
       } else if (cmd == 'deluser') {
         if (unsafe) {
-          return await terminal(cmd, args);
+          return await terminal(cmd, args, true);
         } else {
           return print('Script attempted to perform forbitten activity.');
         }
       } else if (cmd == 'logout') {
         if (unsafe) {
-          return await terminal(cmd, args);
+          return await terminal(cmd, args, true);
         } else {
           return print('Script attempted to perform forbitten activity.');
         }
@@ -443,9 +447,9 @@ Future run(String _path, List<String> params, [bool timed = false]) async {
         if (permissions['field_management'] == false) {
           return error('Script attempted to perform forbitten activity.');
         }
-        await terminal(cmd, args);
+        await terminal(cmd, args, true);
       } else {
-        await terminal(cmd, args);
+        await terminal(cmd, args, true);
       }
     } catch (e) {
       error('An error has occured while running your script.');
@@ -459,8 +463,19 @@ Future run(String _path, List<String> params, [bool timed = false]) async {
   }
 }
 
-Future terminal(String cmd, List<String> args) async {
+Future terminal(String cmd, List<String> args,
+    [bool fromScript = false]) async {
   fileSyncInit();
+  if (!fromScript) {
+    final ran = [];
+    for (var i = 0; i < drive['oncommand_scripts'].length; i++) {
+      final str = drive['oncommand_scripts'][i];
+      if (ran.contains(str) == false) {
+        ran.add(str);
+        await run(str, [cmd, ...args], true);
+      }
+    }
+  }
   if (cmd == 'hello') return hello();
   if (cmd == 'exit' ||
       cmd == 'shutdown' ||
@@ -710,6 +725,58 @@ Future terminal(String cmd, List<String> args) async {
           dirPath = path == '/' ? '/$dirPath' : '$path/$dirPath';
         }
         drive['onboot_scripts'].remove(dirPath);
+        if (drive['settings']['always_save_drive'] == true) saveDrive();
+        return;
+      }
+    } else {
+      return error('Not enough arguments');
+    }
+  }
+  if (cmd == 'oncommand') {
+    if (args.isNotEmpty) {
+      if (args[0] == 'show') {
+        drive['oncommand_scripts'].forEach(print);
+        return;
+      } else if (args[0] == 'add') {
+        var dirPath = args[1];
+        if (!dirPath.startsWith('/')) {
+          dirPath = path == '/' ? '/$dirPath' : '$path/$dirPath';
+        }
+        drive['oncommand_scripts'].add(dirPath);
+        if (drive['settings']['always_save_drive'] == true) saveDrive();
+        return;
+      } else if (args[0] == 'remove') {
+        var dirPath = args[1];
+        if (!dirPath.startsWith('/')) {
+          dirPath = path == '/' ? '/$dirPath' : '$path/$dirPath';
+        }
+        drive['oncommand_scripts'].remove(dirPath);
+        if (drive['settings']['always_save_drive'] == true) saveDrive();
+        return;
+      }
+    } else {
+      return error('Not enough arguments');
+    }
+  }
+  if (cmd == 'oncontent') {
+    if (args.isNotEmpty) {
+      if (args[0] == 'show') {
+        drive['oncontent_scripts'].forEach(print);
+        return;
+      } else if (args[0] == 'add') {
+        var dirPath = args[1];
+        if (!dirPath.startsWith('/')) {
+          dirPath = path == '/' ? '/$dirPath' : '$path/$dirPath';
+        }
+        drive['oncontent_scripts'].add(dirPath);
+        if (drive['settings']['always_save_drive'] == true) saveDrive();
+        return;
+      } else if (args[0] == 'remove') {
+        var dirPath = args[1];
+        if (!dirPath.startsWith('/')) {
+          dirPath = path == '/' ? '/$dirPath' : '$path/$dirPath';
+        }
+        drive['oncontent_scripts'].remove(dirPath);
         if (drive['settings']['always_save_drive'] == true) saveDrive();
         return;
       }

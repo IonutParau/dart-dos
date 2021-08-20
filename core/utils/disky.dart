@@ -117,6 +117,42 @@ void healthCheck({bool silent = false}) {
           drive[key].remove(element);
         },
       );
+    } else if (key == 'oncontent_scripts') {
+      if (!(value is List)) {
+        drive[key] = <String>[];
+      }
+      final listOfRemovals = [];
+      drive[key].forEach(
+        (v) {
+          if (drive[v] == null) {
+            if (!silent) print('$v is a oncontent script that does not exist.');
+            listOfRemovals.add(v);
+          }
+        },
+      );
+      listOfRemovals.forEach(
+        (element) {
+          drive[key].remove(element);
+        },
+      );
+    } else if (key == 'oncommand_scripts') {
+      if (!(value is List)) {
+        drive[key] = <String>[];
+      }
+      final listOfRemovals = [];
+      drive[key].forEach(
+        (v) {
+          if (drive[v] == null) {
+            if (!silent) print('$v is a oncommand script that does not exist.');
+            listOfRemovals.add(v);
+          }
+        },
+      );
+      listOfRemovals.forEach(
+        (element) {
+          drive[key].remove(element);
+        },
+      );
     } else {
       if (value is Map) {
         if (value['type'] != 'file' && value['type'] != 'folder') {
@@ -224,6 +260,16 @@ void heal() {
       }
     } else if (key == 'cmd_scripts') {
       if (!(value is Map)) {
+        drive[key] = blankDrive[key];
+        healed++;
+      }
+    } else if (key == 'oncontent_scripts') {
+      if (!(value is List)) {
+        drive[key] = blankDrive[key];
+        healed++;
+      }
+    } else if (key == 'oncommand_scripts') {
+      if (!(value is List)) {
         drive[key] = blankDrive[key];
         healed++;
       }
