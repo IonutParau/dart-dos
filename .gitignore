@@ -4,6 +4,7 @@
 *\drive.json
 *\backup.json
 *\dartdos.exe
+*/dartdos.aot
 
 # Conventional directory for build output.
 build/
